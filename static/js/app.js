@@ -336,11 +336,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             const data = await response.json();
                             
                             // Update editor content without saving
-                            snippetContent.value = data.content;
+                            if (snippetContent) {
+                                snippetContent.value = data.content;
+                            }
                             
                             // Show success message
                             showSaveMessage('Version restored to editor', 'success');
                         } catch (error) {
+                            console.error('Error restoring version:', error);
                             showSaveMessage('Failed to restore version', 'error');
                         }
                     }
