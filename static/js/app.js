@@ -329,26 +329,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     if (confirm('Are you sure you want to restore this version? This will replace your current content.')) {
                         try {
-                            const response = await fetch(`/api/snippets/${snippetId}`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    content: commit.content,
-                                    name: currentSnippet
-                                })
-                            });
-                            
-                            if (response.ok) {
-                                const data = await response.json();
-                                snippetContent.value = data.content;
-                                showSaveMessage('Version restored successfully!', 'success');
-                                loadSnippets(); // Refresh the list to update timestamps
-                            } else {
-                                const error = await response.json();
-                                showSaveMessage(error.error || 'Failed to restore version', 'error');
+                            const response = await fetch(`/api/snippets/${snippetId}/history/${commit.hash}`);
+                            if (!response.ok) {
+                                throw new Error('Failed to load version');
                             }
+                            const data = await response.json();
+                            
+                            // Update editor content without saving
+                            snippetContent.value = data.content;
+                            
+                            // Show success message
+                            showSaveMessage('Version restored to editor', 'success');
                         } catch (error) {
                             showSaveMessage('Failed to restore version', 'error');
                         }
