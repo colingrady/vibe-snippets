@@ -139,6 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Show save message
+    function showSaveMessage(message, type = 'success') {
+        clearTimeout(saveMessageTimeout);
+        saveMessage.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'exclamation-circle'}"></i> ${message}`;
+        saveMessage.classList.add('visible');
+        
+        // Hide the message after 2 seconds
+        saveMessageTimeout = setTimeout(() => {
+            saveMessage.classList.remove('visible');
+        }, 2000);
+    }
+
     // Make createSnippet globally accessible
     window.createSnippet = function() {
         console.log('Creating new snippet');
@@ -329,19 +341,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     if (confirm('Are you sure you want to restore this version? This will replace your current content.')) {
                         try {
-                            const response = await fetch(`/api/snippets/${snippetId}/history/${commit.hash}`);
-                            if (!response.ok) {
-                                throw new Error('Failed to load version');
-                            }
-                            const data = await response.json();
-                            
-                            // Update editor content without saving
+                            // Use the content directly from the commit object
                             if (snippetContent) {
-                                snippetContent.value = data.content;
+                                // Allow empty string as valid content
+                                snippetContent.value = commit.content || '';
+                                console.log('Restored content:', commit.content || '');
+                                
+                                // Show success message
+                                showSaveMessage('Version restored to editor', 'success');
+                            } else {
+                                throw new Error('Editor not found');
                             }
-                            
-                            // Show success message
-                            showSaveMessage('Version restored to editor', 'success');
                         } catch (error) {
                             console.error('Error restoring version:', error);
                             showSaveMessage('Failed to restore version', 'error');
@@ -625,14 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Show save success message
-            clearTimeout(saveMessageTimeout);
-            saveMessage.innerHTML = '<i class="fas fa-check"></i> Snippet saved successfully';
-            saveMessage.classList.add('visible');
-            
-            // Hide the message after 2 seconds
-            saveMessageTimeout = setTimeout(() => {
-                saveMessage.classList.remove('visible');
-            }, 2000);
+            showSaveMessage('Snippet saved successfully', 'success');
 
             // If Git tracking is enabled, show history
             if (data.git_tracking) {
@@ -662,14 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Show discard success message
-                clearTimeout(saveMessageTimeout);
-                saveMessage.innerHTML = '<i class="fas fa-undo"></i> Changes discarded';
-                saveMessage.classList.add('visible');
-                
-                // Hide the message after 2 seconds
-                saveMessageTimeout = setTimeout(() => {
-                    saveMessage.classList.remove('visible');
-                }, 2000);
+                showSaveMessage('Changes discarded', 'success');
             }
         } else {
             // If no snippet is selected, create a new one

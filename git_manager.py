@@ -60,11 +60,16 @@ class GitManager:
             for commit in self.repo.iter_commits(paths=snippet_path):
                 # Get the file content at this commit
                 try:
-                    # Get the file content from the commit's tree
-                    file_content = commit.tree[snippet_path].data_stream.read().decode('utf-8')
+                    # Check if file exists in this commit
+                    if snippet_path in commit.tree:
+                        # Get the file content from the commit's tree
+                        file_content = commit.tree[snippet_path].data_stream.read().decode('utf-8')
+                    else:
+                        # File doesn't exist in this commit, use empty string
+                        file_content = ''
                 except Exception as e:
                     print(f"Error getting content for commit {commit.hexsha}: {e}")
-                    file_content = None
+                    file_content = ''
                 
                 commits.append({
                     'hash': commit.hexsha,
