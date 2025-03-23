@@ -12,9 +12,15 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <h1>Snippets</h1>
-                <button id="newSnippetBtn" class="new-snippet-btn">
-                    <i class="fas fa-plus"></i> New Snippet
-                </button>
+                <div class="header-actions">
+                    <button class="theme-toggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="new-snippet-btn">
+                        <i class="fas fa-plus"></i>
+                        New Snippet
+                    </button>
+                </div>
             </div>
             <div id="snippetsList" class="snippets-list">
                 {% for name in snippets %}
@@ -32,10 +38,10 @@
             <div class="editor-header">
                 <input type="text" id="snippetName" class="editor-title" placeholder="Enter snippet name">
                 <div class="editor-actions">
-                    <label class="git-tracking-toggle">
+                    <div class="git-tracking-toggle">
                         <input type="checkbox" id="gitTracking">
-                        Track Changes
-                    </label>
+                        <label for="gitTracking">Git Tracking</label>
+                    </div>
                     <button id="saveBtn" class="save-btn">
                         <i class="fas fa-save"></i> Save
                     </button>

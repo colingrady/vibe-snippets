@@ -17,6 +17,50 @@ document.addEventListener('DOMContentLoaded', () => {
     let isShowingHistory = false;  // Add flag to prevent recursion
     let saveMessageTimeout;  // Add timeout variable for save message
 
+    // Theme management
+    const themeToggle = document.querySelector('.theme-toggle');
+    const themeIcon = themeToggle.querySelector('i');
+
+    // Initialize theme from localStorage or system preference
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.body.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        } else {
+            // Check system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const defaultTheme = prefersDark ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', defaultTheme);
+            updateThemeIcon(defaultTheme);
+        }
+    }
+
+    function updateThemeIcon(theme) {
+        themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+    });
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            const newTheme = e.matches ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+    });
+
+    // Initialize theme when the page loads
+    initializeTheme();
+
     // Make functions globally accessible
     window.showHistory = async function(snippetId) {
         // Prevent recursive calls
