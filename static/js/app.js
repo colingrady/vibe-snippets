@@ -454,7 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!id) {
             currentSnippet = null;
             if (editorTitle) {
-                editorTitle.textContent = 'New Snippet';
+                editorTitle.value = 'New Snippet';
+                editorTitle.removeAttribute('readonly');
+                editorTitle.classList.add('active');
             }
             return;
         }
@@ -472,8 +474,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update editor title if element exists
         if (editorTitle) {
-            const snippetName = selectedItem?.querySelector('span')?.textContent || '';
-            editorTitle.textContent = snippetName;
+            const snippetName = selectedItem?.querySelector('.snippet-name')?.textContent || '';
+            editorTitle.value = snippetName;
+            editorTitle.setAttribute('readonly', true);
+            editorTitle.classList.remove('active');
         }
         
         // Load snippet content
@@ -509,6 +513,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Add click handler for editor title
+    if (editorTitle) {
+        editorTitle.addEventListener('click', () => {
+            if (currentSnippet) {  // Only allow editing for existing snippets
+                editorTitle.removeAttribute('readonly');
+                editorTitle.classList.add('active');
+                editorTitle.focus();
+            }
+        });
+
+        // Handle blur event (when focus is lost)
+        editorTitle.addEventListener('blur', () => {
+            if (currentSnippet) {
+                editorTitle.setAttribute('readonly', true);
+                editorTitle.classList.remove('active');
+            }
+        });
+
+        // Handle enter key
+        editorTitle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                editorTitle.blur();
+                saveSnippet();
+            }
+        });
+    }
+
     // Improve snippet selection reliability
     function selectSnippet(snippetId, name, isHistoryCall = false) {
         // Remove active class from all snippets
@@ -528,7 +560,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update editor state
         currentSnippet = snippetId;
         if (editorTitle) {
-            editorTitle.textContent = name;
+            // Use the provided name or get it from the snippets object
+            const snippetName = name || snippets[snippetId]?.name || '';
+            editorTitle.value = snippetName;
+            editorTitle.setAttribute('readonly', true);
+            editorTitle.classList.remove('active');
         }
         snippetContent.value = snippets[snippetId].content;
         
