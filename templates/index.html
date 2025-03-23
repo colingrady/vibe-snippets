@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snippets</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>Snippets</h1>
+                <button id="newSnippetBtn" class="new-snippet-btn">
+                    <i class="fas fa-plus"></i> New Snippet
+                </button>
+            </div>
+            <div id="snippetsList" class="snippets-list">
+                {% for name in snippets %}
+                <div class="snippet-item" data-name="{{ name }}">
+                    <span>{{ name }}</span>
+                    <div class="snippet-actions">
+                        <button class="delete-btn">×</button>
+                        <button class="history-btn" title="View History">📜</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="editor">
+            <div class="editor-header">
+                <input type="text" id="snippetName" class="editor-title" placeholder="Enter snippet name">
+                <div class="editor-actions">
+                    <label class="git-tracking-toggle">
+                        <input type="checkbox" id="gitTracking">
+                        Track Changes
+                    </label>
+                    <button id="saveBtn" class="save-btn">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button id="discardBtn" class="discard-btn">
+                        <i class="fas fa-times"></i> Discard
+                    </button>
+                    <div id="saveMessage" class="save-message"></div>
+                </div>
+            </div>
+            <textarea id="snippetContent" placeholder="Enter your snippet content here..."></textarea>
+        </div>
+    </div>
+    <div id="historyPanel" class="history-panel">
+        <div class="history-header">
+            <h2>History</h2>
+            <button class="close-history-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <ul id="historyList" class="history-list"></ul>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 
