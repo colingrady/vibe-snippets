@@ -225,6 +225,32 @@ body {
     outline: none;
 }
 
+.editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.git-tracking-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-right: auto;
+}
+
+.git-tracking-toggle input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.git-tracking-toggle label {
+    cursor: pointer;
+}
+
 #snippetContent {
     flex-grow: 1;
     padding: 20px;
@@ -251,6 +277,8 @@ body {
     font-size: 14px;
     transition: all 0.2s;
     color: var(--button-text);
+    min-width: 100px;
+    justify-content: center;
 }
 
 .save-btn {
