@@ -103,6 +103,33 @@ body {
     padding: 10px;
 }
 
+.empty-snippet {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+    border: 2px dashed var(--border-color);
+    background-color: var(--bg-primary);
+}
+
+.empty-snippet:hover {
+    border-color: var(--button-bg);
+    background-color: var(--hover-bg);
+}
+
+.empty-snippet .snippet-icon {
+    color: var(--button-bg);
+    font-size: 18px;
+}
+
+.empty-snippet .snippet-name {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
 .snippet-item {
     display: flex;
     align-items: center;
@@ -111,6 +138,7 @@ body {
     cursor: pointer;
     transition: background-color 0.2s ease;
     margin-bottom: 5px;
+    border: 1px solid transparent;
 }
 
 .snippet-item:hover {
@@ -124,14 +152,32 @@ body {
 .snippet-icon {
     margin-right: 10px;
     color: var(--text-secondary);
+    position: relative;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.snippet-icon i {
+    font-size: 18px;
+}
+
+.snippet-icon i.fa-git-alt {
+    position: absolute;
+    font-size: 12px;
+    bottom: -2px;
+    right: -2px;
+    color: var(--button-bg);
 }
 
 .snippet-info {
-    flex-grow: 1;
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 0;
 }
 
 .snippet-name {
@@ -149,12 +195,17 @@ body {
     margin-top: 2px;
 }
 
+.snippet-item:hover .snippet-timestamp {
+    opacity: 1;
+}
+
 .snippet-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
+    margin-left: 0;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s ease;
 }
 
 .snippet-item:hover .snippet-actions {
@@ -228,17 +279,26 @@ body {
 .editor-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
-    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-left: 0;
+}
+
+.editor-actions .save-btn,
+.editor-actions .discard-btn {
+    order: -1;
+}
+
+.editor-actions .git-tracking-toggle {
+    margin-left: 0;
 }
 
 .git-tracking-toggle {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     color: var(--text-secondary);
     font-size: 14px;
-    margin-right: auto;
+    margin-right: 0;
 }
 
 .git-tracking-toggle input[type="checkbox"] {

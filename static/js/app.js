@@ -1,21 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const snippetsList = document.getElementById('snippetsList');
-    const newSnippetBtn = document.getElementById('newSnippetBtn');
-    const snippetName = document.getElementById('snippetName');
-    const snippetContent = document.getElementById('snippetContent');
-    const saveBtn = document.getElementById('saveBtn');
-    const discardBtn = document.getElementById('discardBtn');
-    const gitTracking = document.getElementById('gitTracking');
-    const historyPanel = document.getElementById('historyPanel');
-    const historyList = document.getElementById('historyList');
-    const closeHistoryBtn = document.querySelector('.close-history-btn');
+    const snippetsList = document.querySelector('.snippets-list');
     const editorTitle = document.querySelector('.editor-title');
-    const saveMessage = document.getElementById('saveMessage');
+    const snippetContent = document.getElementById('snippetContent');
+    const saveBtn = document.querySelector('.save-btn');
+    const discardBtn = document.querySelector('.discard-btn');
+    const gitTracking = document.getElementById('gitTracking');
+    const historyPanel = document.querySelector('.history-panel');
+    const historyList = document.querySelector('.history-list');
+    const closeHistoryBtn = document.querySelector('.close-history-btn');
+    const saveMessage = document.querySelector('.save-message');
 
     let currentSnippet = null;
     let snippets = {};
-    let isShowingHistory = false;  // Add flag to prevent recursion
-    let saveMessageTimeout;  // Add timeout variable for save message
+    let isShowingHistory = false;
+    let saveMessageTimeout;
 
     // Theme management
     const themeToggle = document.querySelector('.theme-toggle');
@@ -60,6 +58,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize theme when the page loads
     initializeTheme();
+
+    // Load snippets from the server
+    async function loadSnippets() {
+        try {
+            const response = await fetch('/api/snippets');
+            if (!response.ok) {
+                throw new Error('Failed to load snippets');
+            }
+            const snippetsData = await response.json();
+            console.log('Loaded snippets:', snippetsData);
+            
+            // Convert object to array and sort by date
+            const snippetsArray = Object.entries(snippetsData).map(([id, data]) => ({
+                id,
+                ...data
+            })).sort((a, b) => new Date(b.last_modified) - new Date(a.last_modified));
+            
+            // Update the snippets object
+            snippets = snippetsData;
+            
+            // Clear the snippets list
+            snippetsList.innerHTML = '';
+            
+            // Add the empty snippet at the top
+            const emptySnippet = document.createElement('div');
+            emptySnippet.className = 'snippet-item empty-snippet';
+            emptySnippet.innerHTML = `
+                <div class="snippet-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="snippet-info">
+                    <div class="snippet-name">New Snippet</div>
+                </div>
+            `;
+            emptySnippet.onclick = createSnippet;
+            snippetsList.appendChild(emptySnippet);
+            
+            // Add existing snippets
+            snippetsArray.forEach(snippet => {
+                console.log('Processing snippet:', snippet);
+                const div = document.createElement('div');
+                div.className = 'snippet-item';
+                div.dataset.id = snippet.id;
+                
+                const hasGitTracking = snippet.git_tracking;
+                console.log('Snippet timestamp:', snippet.last_modified);
+                
+                div.innerHTML = `
+                    <div class="snippet-icon">
+                        ${hasGitTracking ? 
+                            `<i class="fas fa-sticky-note" title="History Tracking Enabled">
+                                <i class="fab fa-git-alt"></i>
+                            </i>` : 
+                            `<i class="fas fa-sticky-note" title="Local Snippet"></i>`
+                        }
+                    </div>
+                    <div class="snippet-info">
+                        <div class="snippet-name">${snippet.name}</div>
+                        <div class="snippet-timestamp">${snippet.last_modified ? new Date(snippet.last_modified).toLocaleString() : ''}</div>
+                    </div>
+                    <div class="snippet-actions">
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteSnippet('${snippet.id}')" title="Delete Snippet">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                div.onclick = () => selectSnippet(snippet.id);
+                snippetsList.appendChild(div);
+            });
+            
+            // If we have a current snippet, ensure it's selected
+            if (currentSnippet && snippets[currentSnippet]) {
+                selectSnippet(currentSnippet);
+            }
+        } catch (error) {
+            console.error('Error loading snippets:', error);
+            alert('Failed to load snippets');
+        }
+    }
+
+    // Make createSnippet globally accessible
+    window.createSnippet = function() {
+        console.log('Creating new snippet');
+        
+        // Clear current snippet
+        currentSnippet = null;
+        
+        // Close history panel
+        historyPanel.classList.remove('visible');
+        
+        // Clear and focus the name field
+        if (editorTitle) {
+            editorTitle.value = '';
+            editorTitle.focus();
+            editorTitle.classList.add('active');
+            editorTitle.removeAttribute('readonly');
+            editorTitle.removeAttribute('disabled');
+            console.log('Name field initialized');
+        } else {
+            console.error('Snippet name input not found');
+        }
+        
+        // Clear content and Git tracking
+        if (snippetContent) {
+            snippetContent.value = '';
+        }
+        if (gitTracking) {
+            gitTracking.checked = false;
+            gitTracking.parentElement.style.display = 'flex'; // Show tracking checkbox for new snippets
+        }
+        
+        // Update UI state
+        updateActiveSnippet(null);
+        
+        // Update editor title
+        if (editorTitle) {
+            editorTitle.value = 'New Snippet';
+        }
+    };
 
     // Make functions globally accessible
     window.showHistory = async function(snippetId) {
@@ -259,56 +377,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.deleteSnippet = async function(id) {
-        if (!confirm(`Are you sure you want to delete "${id}"?`)) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/snippets/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                alert(error.error || 'Error deleting snippet');
-                return;
-            }
-
-            // Close history panel
-            historyPanel.classList.remove('visible');
-
-            // If the deleted snippet was the current one, select another snippet
-            if (currentSnippet === id) {
-                currentSnippet = null;
-                snippetName.value = '';
-                snippetContent.value = '';
-                gitTracking.checked = false;
-                updateActiveSnippet(null);
-
-                // Find another snippet to select
-                const remainingSnippets = Object.entries(snippets).filter(([sid]) => sid !== id);
-                if (remainingSnippets.length > 0) {
-                    // Select the first remaining snippet
-                    const [nextId, nextSnippet] = remainingSnippets[0];
-                    selectSnippet(nextId, nextSnippet.name);
-                    
-                    // Update the UI to show the selected snippet
-                    document.querySelectorAll('.snippet-item').forEach(item => {
-                        item.classList.remove('active', 'selected');
-                    });
-                    const selectedItem = document.querySelector(`.snippet-item[data-id="${nextId}"]`);
-                    if (selectedItem) {
-                        selectedItem.classList.add('active', 'selected');
-                        selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Make deleteSnippet globally accessible
+    window.deleteSnippet = async function(snippetId) {
+        event.stopPropagation();
+        
+        const snippet = snippets[snippetId];
+        if (!snippet) return;
+        
+        if (confirm(`Are you sure you want to delete "${snippet.name}"?`)) {
+            try {
+                const response = await fetch(`/api/snippets/${snippetId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete snippet');
+                }
+                
+                // Close history panel if it's open
+                historyPanel.classList.remove('visible');
+                
+                // If this was the current snippet, select another one
+                if (currentSnippet === snippetId) {
+                    const remainingSnippets = Object.keys(snippets).filter(id => id !== snippetId);
+                    if (remainingSnippets.length > 0) {
+                        selectSnippet(remainingSnippets[0]);
+                    } else {
+                        // If no snippets remain, create a new one
+                        createSnippet();
                     }
                 }
+                
+                // Remove the snippet from our local state
+                delete snippets[snippetId];
+                
+                // Reload the snippets list
+                loadSnippets();
+            } catch (error) {
+                console.error('Error deleting snippet:', error);
+                alert('Failed to delete snippet');
             }
-
-            await loadSnippets();
-        } catch (error) {
-            console.error('Error deleting snippet:', error);
-            alert('Error deleting snippet');
         }
     };
 
@@ -327,59 +435,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error loading Git status:', error);
         }
-    }
-
-    // Load snippets from the server
-    function loadSnippets() {
-        fetch('/api/snippets')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Received snippets data:', data);
-                snippets = data;
-                const snippetsList = document.getElementById('snippetsList');
-                if (!snippetsList) {
-                    console.error('Snippets list element not found');
-                    return;
-                }
-                snippetsList.innerHTML = '';
-                
-                Object.entries(snippets).forEach(([id, snippet]) => {
-                    console.log('Processing snippet:', id, snippet);
-                    const div = document.createElement('div');
-                    div.className = 'snippet-item';
-                    div.setAttribute('data-id', id);
-                    
-                    // Check if snippet has Git tracking enabled
-                    const hasGitTracking = snippet.git_tracking === true;
-                    console.log('Git tracking status for', id, ':', hasGitTracking);
-                    
-                    div.innerHTML = `
-                        <div class="snippet-icon">
-                            ${hasGitTracking ? 
-                                `<i class="fas fa-sticky-note" title="Git Tracking Enabled">
-                                    <i class="fab fa-git-alt"></i>
-                                </i>` : 
-                                `<i class="fas fa-sticky-note" title="Local Snippet"></i>`
-                            }
-                        </div>
-                        <div class="snippet-info">
-                            <span class="snippet-name">${snippet.name}</span>
-                            <span class="snippet-timestamp">${snippet.last_modified ? new Date(snippet.last_modified).toLocaleString() : 'Never'}</span>
-                        </div>
-                        <div class="snippet-actions">
-                            <button class="delete-btn" onclick="event.stopPropagation(); deleteSnippet('${id}')" title="Delete Snippet">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                    div.onclick = () => handleSnippetClick(id, snippet.name);
-                    snippetsList.appendChild(div);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading snippets:', error);
-                alert('Error loading snippets');
-            });
     }
 
     // Update active snippet and load its content
@@ -450,52 +505,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Create a new snippet
-    async function createSnippet() {
-        console.log('Creating new snippet');
+    // Improve snippet selection reliability
+    function selectSnippet(snippetId, name, isHistoryCall = false) {
+        // Remove active class from all snippets
+        document.querySelectorAll('.snippet-item').forEach(item => {
+            item.classList.remove('active', 'selected');
+        });
         
-        // Clear current snippet
-        currentSnippet = null;
-        
-        // Clear and focus the name field
-        if (snippetName) {
-            snippetName.value = '';
-            snippetName.focus();
-            snippetName.classList.add('active');
-            snippetName.removeAttribute('readonly');
-            snippetName.removeAttribute('disabled');
-            console.log('Name field initialized');
-        } else {
-            console.error('Snippet name input not found');
+        // Add active class to selected snippet
+        const selectedItem = document.querySelector(`.snippet-item[data-id="${snippetId}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('active', 'selected');
+            
+            // Ensure the selected item is visible in the list
+            selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
-        // Clear content and Git tracking
-        if (snippetContent) {
-            snippetContent.value = '';
-        }
-        if (gitTracking) {
-            gitTracking.checked = false;
-            gitTracking.parentElement.style.display = 'flex'; // Show tracking checkbox for new snippets
-        }
-        
-        // Update UI state
-        updateActiveSnippet(null);
-        
-        // Update editor title
+        // Update editor state
+        currentSnippet = snippetId;
         if (editorTitle) {
-            editorTitle.textContent = 'New Snippet';
+            editorTitle.textContent = name;
         }
+        snippetContent.value = snippets[snippetId].content;
+        
+        // Hide tracking checkbox for existing snippets
+        if (gitTracking) {
+            gitTracking.parentElement.style.display = 'none';
+        }
+        
+        // Check if the snippet has Git tracking enabled
+        const hasGitTracking = snippets[snippetId]?.git_tracking === true;
+        
+        // Show history immediately if tracking is enabled and this isn't a history call
+        if (hasGitTracking && !isHistoryCall) {
+            showHistory(snippetId);
+        } else if (!hasGitTracking) {
+            historyPanel.classList.remove('visible');
+        }
+        
+        // Load Git status for UI updates
+        loadGitStatus(snippetId);
+    }
+
+    // Add debounce to snippet selection to prevent multiple rapid clicks
+    let selectionTimeout;
+    function handleSnippetClick(snippetId, name) {
+        clearTimeout(selectionTimeout);
+        selectionTimeout = setTimeout(() => {
+            selectSnippet(snippetId, name);
+        }, 100);
     }
 
     // Save the current snippet
     async function saveSnippet() {
-        const name = snippetName.value.trim();
+        const name = editorTitle.value.trim();
         console.log('Saving snippet with name:', name);
         
         if (!name) {
             alert('Please enter a name for the snippet');
-            if (snippetName) {
-                snippetName.focus();
+            if (editorTitle) {
+                editorTitle.focus();
             }
             return;
         }
@@ -552,13 +621,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Update the editor title
             if (editorTitle) {
-                editorTitle.textContent = data.name;
+                editorTitle.value = data.name;
             }
             
             // Make the name field readonly after saving
-            if (snippetName) {
-                snippetName.setAttribute('readonly', true);
-                snippetName.classList.remove('active');
+            if (editorTitle) {
+                editorTitle.setAttribute('readonly', true);
+                editorTitle.classList.remove('active');
             }
 
             // Show save success message
@@ -591,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedSnippet) {
                 // Revert content to saved state
                 snippetContent.value = savedSnippet.content;
-                snippetName.value = savedSnippet.name;
+                editorTitle.value = savedSnippet.name;
                 
                 // Update Git tracking checkbox
                 if (gitTracking) {
@@ -615,65 +684,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Event listeners
-    newSnippetBtn.addEventListener('click', createSnippet);
     saveBtn.addEventListener('click', saveSnippet);
     discardBtn.addEventListener('click', discardChanges);
     closeHistoryBtn.addEventListener('click', () => {
         historyPanel.classList.remove('visible');
     });
-
-    // Improve snippet selection reliability
-    function selectSnippet(snippetId, name, isHistoryCall = false) {
-        // Remove active class from all snippets
-        document.querySelectorAll('.snippet-item').forEach(item => {
-            item.classList.remove('active', 'selected');
-        });
-        
-        // Add active class to selected snippet
-        const selectedItem = document.querySelector(`.snippet-item[data-id="${snippetId}"]`);
-        if (selectedItem) {
-            selectedItem.classList.add('active', 'selected');
-            
-            // Ensure the selected item is visible in the list
-            selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        // Update editor state
-        currentSnippet = snippetId;
-        if (snippetName) {
-            snippetName.value = name;
-            snippetName.removeAttribute('readonly');
-            snippetName.removeAttribute('disabled');
-        }
-        snippetContent.value = snippets[snippetId].content;
-        
-        // Hide tracking checkbox for existing snippets
-        if (gitTracking) {
-            gitTracking.parentElement.style.display = 'none';
-        }
-        
-        // Check if the snippet has Git tracking enabled
-        const hasGitTracking = snippets[snippetId]?.git_tracking === true;
-        
-        // Show history immediately if tracking is enabled and this isn't a history call
-        if (hasGitTracking && !isHistoryCall) {
-            showHistory(snippetId);
-        } else if (!hasGitTracking) {
-            historyPanel.classList.remove('visible');
-        }
-        
-        // Load Git status for UI updates
-        loadGitStatus(snippetId);
-    }
-
-    // Add debounce to snippet selection to prevent multiple rapid clicks
-    let selectionTimeout;
-    function handleSnippetClick(snippetId, name) {
-        clearTimeout(selectionTimeout);
-        selectionTimeout = setTimeout(() => {
-            selectSnippet(snippetId, name);
-        }, 100);
-    }
 
     // Initial load
     loadSnippets();

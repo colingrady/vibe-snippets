@@ -4,25 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snippets</title>
-    <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="sidebar">
             <div class="sidebar-header">
                 <h1>Snippets</h1>
-                <div class="header-actions">
-                    <button class="theme-toggle" title="Toggle theme">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <button class="new-snippet-btn">
-                        <i class="fas fa-plus"></i>
-                        New Snippet
-                    </button>
-                </div>
+                <button class="theme-toggle" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
-            <div id="snippetsList" class="snippets-list">
+            <div class="snippets-list">
                 {% for name in snippets %}
                 <div class="snippet-item" data-name="{{ name }}">
                     <span>{{ name }}</span>
@@ -36,22 +30,23 @@
         </div>
         <div class="editor">
             <div class="editor-header">
-                <input type="text" id="snippetName" class="editor-title" placeholder="Enter snippet name">
+                <input type="text" class="editor-title" placeholder="Enter snippet name...">
                 <div class="editor-actions">
+                    <button class="save-btn">
+                        <i class="fas fa-save"></i>
+                        Save
+                    </button>
+                    <button class="discard-btn">
+                        <i class="fas fa-times"></i>
+                        Discard
+                    </button>
                     <div class="git-tracking-toggle">
                         <input type="checkbox" id="gitTracking">
-                        <label for="gitTracking">Git Tracking</label>
+                        <label for="gitTracking">History Tracking</label>
                     </div>
-                    <button id="saveBtn" class="save-btn">
-                        <i class="fas fa-save"></i> Save
-                    </button>
-                    <button id="discardBtn" class="discard-btn">
-                        <i class="fas fa-times"></i> Discard
-                    </button>
-                    <div id="saveMessage" class="save-message"></div>
                 </div>
             </div>
-            <textarea id="snippetContent" placeholder="Enter your snippet content here..."></textarea>
+            <textarea id="snippetContent" placeholder="Enter your code here..."></textarea>
         </div>
     </div>
     <div id="historyPanel" class="history-panel">
@@ -62,6 +57,10 @@
             </button>
         </div>
         <ul id="historyList" class="history-list"></ul>
+    </div>
+    <div class="save-message">
+        <i class="fas fa-check"></i>
+        Snippet saved successfully
     </div>
     <script src="/static/js/app.js"></script>
 </body>
